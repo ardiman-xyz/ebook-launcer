@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sample E-book Flipbook</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Georgia", serif;
+                background: #2c3e50;
+                color: #2c3e50;
+                overflow: hidden;
+            }
+
+            .flipbook-container {
+                width: 100vw;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            }
+
+            .book {
+                width: 800px;
+                height: 600px;
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .page {
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                padding: 60px;
+                display: none;
+                background: white;
+                transition: all 0.3s ease;
+            }
+
+            .page.active {
+                display: block;
+            }
+
+            .page h1 {
+                color: #2c3e50;
+                font-size: 28px;
+                margin-bottom: 20px;
+                text-align: center;
+                border-bottom: 2px solid #3498db;
+                padding-bottom: 10px;
+            }
+
+            .page h2 {
+                color: #34495e;
+                font-size: 22px;
+                margin-bottom: 15px;
+                margin-top: 30px;
+            }
+
+            .page p {
+                line-height: 1.8;
+                margin-bottom: 15px;
+                text-align: justify;
+                font-size: 16px;
+            }
+
+            .controls {
+                position: absolute;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 20px;
+                align-items: center;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 15px 25px;
+                border-radius: 25px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+
+            .btn {
+                background: #3498db;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background 0.3s;
+            }
+
+            .btn:hover {
+                background: #2980b9;
+            }
+
+            .btn:disabled {
+                background: #bdc3c7;
+                cursor: not-allowed;
+            }
+
+            .page-info {
+                font-weight: bold;
+                color: #2c3e50;
+                min-width: 80px;
+                text-align: center;
+            }
+
+            .launcher-status {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: rgba(46, 204, 113, 0.9);
+                color: white;
+                padding: 8px 15px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+
+            .launcher-status.disconnected {
+                background: rgba(231, 76, 60, 0.9);
+            }
+
+            .cover-page {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .cover-page h1 {
+                font-size: 48px;
+                margin-bottom: 20px;
+                color: white;
+                border: none;
+            }
+
+            .cover-page .subtitle {
+                font-size: 24px;
+                margin-bottom: 40px;
+                opacity: 0.9;
+            }
+
+            .cover-page .author {
+                font-size: 18px;
+                opacity: 0.8;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="flipbook-container">
+            <div class="book">
+                <div class="launcher-status" id="launcher-status">
+                    🔗 Connected to launcher
+                </div>
+
+                <!-- Cover Page -->
+                <div class="page cover-page active" id="page-0">
+                    <h1>📚 Sample E-book</h1>
+                    <p class="subtitle">Sistem Proteksi & Keamanan Digital</p>
+                    <p class="author">Protected by E-book Launcher</p>
+                    <div
+                        style="margin-top: 40px; font-size: 14px; opacity: 0.7"
+                    >
+                        Session: {{ session_key }}<br />
+                        Device: {{ hostname }}<br />
+                        Decrypted: {{ timestamp }}
+                    </div>
+                </div>
+
+                <!-- Page 1 -->
+                <div class="page" id="page-1">
+                    <h1>Bab 1: Pengenalan Sistem Keamanan</h1>
+
+                    <h2>Apa itu Device Fingerprinting?</h2>
+                    <p>
+                        Device fingerprinting adalah teknik untuk
+                        mengidentifikasi dan melacak perangkat berdasarkan
+                        konfigurasi hardware dan software yang unik. Teknik ini
+                        sangat efektif untuk sistem proteksi konten digital.
+                    </p>
+
+                    <h2>Keuntungan Sistem Proteksi</h2>
+                    <p>
+                        Dengan menggunakan sistem proteksi yang tepat, konten
+                        digital dapat diamankan dari penyebaran ilegal. Setiap
+                        license terikat pada device tertentu, sehingga tidak
+                        dapat digunakan di perangkat lain tanpa otorisasi.
+                    </p>
+
+                    <p>
+                        Sistem ini menggunakan enkripsi AES-256 dan validasi
+                        real-time untuk memastikan keamanan maksimal.
+                    </p>
+                </div>
+
+                <!-- Page 2 -->
+                <div class="page" id="page-2">
+                    <h1>Bab 2: Implementasi Teknis</h1>
+
+                    <h2>Arsitektur Sistem</h2>
+                    <p>
+                        Sistem proteksi ini terdiri dari beberapa komponen
+                        utama:
+                    </p>
+                    <p>
+                        <strong>1. Launcher Application:</strong> Aplikasi
+                        desktop yang mengelola aktivasi dan validasi license.
+                        Dibangun menggunakan NativePHP untuk pengalaman native.
+                    </p>
+                    <p>
+                        <strong>2. Content Encryption:</strong> Semua file
+                        konten dienkripsi menggunakan algoritma AES-256 dengan
+                        key yang dibangkitkan dari device fingerprint.
+                    </p>
+                    <p>
+                        <strong>3. Real-time Monitoring:</strong> Sistem
+                        monitoring yang memastikan launcher tetap aktif selama
+                        konten dibuka.
+                    </p>
+
+                    <h2>Keamanan Berlapis</h2>
+                    <p>
+                        Implementasi menggunakan multiple layer security untuk
+                        mencegah bypass dan cracking.
+                    </p>
+                </div>
+
+                <!-- Page 3 -->
+                <div class="page" id="page-3">
+                    <h1>Bab 3: Penggunaan dan Distribusi</h1>
+
+                    <h2>Cara Distribusi</h2>
+                    <p>
+                        Konten didistribusikan dalam bentuk package ZIP yang
+                        berisi:
+                    </p>
+                    <p>
+                        • Launcher executable (.exe/.app)<br />
+                        • Encrypted content files<br />
+                        • Unique license key<br />
+                        • Installation guide
+                    </p>
+
+                    <h2>Pengalaman User</h2>
+                    <p>
+                        User hanya perlu extract ZIP, jalankan launcher, dan
+                        input license key. Setelah aktivasi berhasil, konten
+                        dapat diakses dengan aman.
+                    </p>
+
+                    <p>
+                        Sistem dirancang untuk memberikan pengalaman yang
+                        seamless sambil tetap mempertahankan keamanan maksimal.
+                    </p>
+
+                    <div
+                        style="
+                            margin-top: 50px;
+                            text-align: center;
+                            color: #7f8c8d;
+                            font-style: italic;
+                        "
+                    >
+                        --- Terima kasih telah menggunakan sistem proteksi kami
+                        ---
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" id="prevBtn" onclick="previousPage()">
+                        ◀ Previous
+                    </button>
+                    <div class="page-info">
+                        <span id="currentPage">1</span> /
+                        <span id="totalPages">4</span>
+                    </div>
+                    <button class="btn" id="nextBtn" onclick="nextPage()">
+                        Next ▶
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let currentPageIndex = 0;
+            const totalPages = 4;
+
+            function showPage(pageIndex) {
+                // Hide all pages
+                document.querySelectorAll(".page").forEach((page) => {
+                    page.classList.remove("active");
+                });
+
+                // Show current page
+                document
+                    .getElementById(`page-${pageIndex}`)
+                    .classList.add("active");
+
+                // Update page info
+                document.getElementById("currentPage").textContent =
+                    pageIndex + 1;
+
+                // Update button states
+                document.getElementById("prevBtn").disabled = pageIndex === 0;
+                document.getElementById("nextBtn").disabled =
+                    pageIndex === totalPages - 1;
+            }
+
+            function nextPage() {
+                if (currentPageIndex < totalPages - 1) {
+                    currentPageIndex++;
+                    showPage(currentPageIndex);
+                }
+            }
+
+            function previousPage() {
+                if (currentPageIndex > 0) {
+                    currentPageIndex--;
+                    showPage(currentPageIndex);
+                }
+            }
+
+            // Keyboard navigation
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "ArrowRight") nextPage();
+                if (e.key === "ArrowLeft") previousPage();
+            });
+
+            // Launcher connection check
+            function checkLauncherConnection() {
+                fetch("http://127.0.0.1:8101/launcher-check")
+                    .then((response) => {
+                        if (response.ok) {
+                            document.getElementById(
+                                "launcher-status"
+                            ).textContent = "🔗 Connected to launcher";
+                            document
+                                .getElementById("launcher-status")
+                                .classList.remove("disconnected");
+                        } else {
+                            throw new Error("Launcher not responding");
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById("launcher-status").textContent =
+                            "❌ Launcher disconnected";
+                        document
+                            .getElementById("launcher-status")
+                            .classList.add("disconnected");
+
+                        setTimeout(() => {
+                            alert(
+                                "⚠️ Connection to launcher lost!\n\nE-book will be closed for security reasons."
+                            );
+                            window.close();
+                        }, 3000);
+                    });
+            }
+
+            // Check connection every 30 seconds
+            setInterval(checkLauncherConnection, 30000);
+
+            // Initialize
+            showPage(0);
+        </script>
+    </body>
+</html>
