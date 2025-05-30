@@ -228,28 +228,7 @@
         @endif
         
         <div class="launch-options">
-            <!-- Option 1: Internal Viewer (Recommended) -->
-            <div class="launch-section">
-                <h3>🏠 Buka di Aplikasi Internal</h3>
-                <p>
-                    <strong>Rekomended:</strong> Buka e-book dalam window terpisah di aplikasi ini. 
-                    Memberikan keamanan maksimal dan kontrol penuh. E-book akan tertutup otomatis 
-                    jika aplikasi launcher ditutup.
-                </p>
-                <button class="btn-launch btn-internal" onclick="launchInternalEbook()">
-                    🚀 Buka E-book (Internal)
-                </button>
-                <div class="features">
-                    <span class="feature-tag security">🔒 Keamanan Tinggi</span>
-                    <span class="feature-tag performance">⚡ Performa Optimal</span>
-                    <span class="feature-tag">🎯 Auto-Close Protection</span>
-                    <span class="feature-tag">📱 Native Experience</span>
-                </div>
-                <div class="loading" id="internal-loading">
-                    <div class="spinner"></div>
-                    Membuka e-book di aplikasi internal...
-                </div>
-            </div>
+        
             
             <!-- Option 2: External Browser -->
             <div class="launch-section">
@@ -262,16 +241,7 @@
                 <button class="btn-launch btn-external" onclick="launchExternalEbook()">
                     🌍 Buka E-book (Browser)
                 </button>
-                <div class="features">
-                    <span class="feature-tag security">🔒 Monitoring Protection</span>
-                    <span class="feature-tag">🖥️ Browser Native</span>
-                    <span class="feature-tag">⚠️ Manual Close Required</span>
-                    <span class="feature-tag">🔧 Testing Mode</span>
-                </div>
-                <div class="loading" id="external-loading">
-                    <div class="spinner"></div>
-                    Membuka e-book di browser external...
-                </div>
+                
             </div>
         </div>
         
