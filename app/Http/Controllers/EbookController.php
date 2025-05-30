@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Process;
 
 class EbookController extends Controller
 {
@@ -19,24 +18,24 @@ class EbookController extends Controller
                 ], 403);
             }
             
-            // Generate session key untuk decrypt
+            // Generate session key untuk tracking
             $sessionKey = $this->generateSessionKey();
             
             // Create temp directory untuk decrypted content
             $tempDir = $this->createTempDirectory();
             
-            // Decrypt ebook content (simulasi - nanti kita implement)
-            $this->decryptEbookContent($tempDir, $sessionKey);
+            // Copy dan modifikasi ebook content
+            $this->prepareEbookContent($tempDir, $sessionKey);
             
-            // Launch ebook viewer (simulasi - nanti kita implement)
-            $this->launchEbookViewer($tempDir);
+            // Launch ebook di browser
+            $this->launchEbookInBrowser($tempDir);
             
             // Start monitoring process
             $this->startProcessMonitoring($tempDir);
             
             return response()->json([
                 'success' => true,
-                'message' => 'E-book berhasil dibuka',
+                'message' => 'E-book berhasil dibuka di browser',
                 'temp_dir' => $tempDir,
                 'session_key' => $sessionKey
             ]);
@@ -57,6 +56,179 @@ class EbookController extends Controller
             'timestamp' => time(),
             'message' => 'Launcher is running'
         ]);
+    }
+    
+    private function prepareEbookContent($tempDir, $sessionKey)
+    {
+        // Path ke flipbook hasil generate PDF (di folder out3)
+        $flipbookSourceDir = storage_path('app/flipbook/out3');
+        $flipbookIndexPath = $flipbookSourceDir . '/index.html';
+        
+        if (!file_exists($flipbookIndexPath)) {
+            throw new \Exception('File flipbook tidak ditemukan di: ' . $flipbookIndexPath);
+        }
+        
+        // Copy seluruh directory out3 ke temp directory
+        $this->copyFlipbookDirectory($flipbookSourceDir, $tempDir);
+        
+        // Baca dan modifikasi file index.html untuk keamanan
+        $indexFile = $tempDir . '/index.html';
+        $originalContent = file_get_contents($indexFile);
+        
+        // Inject minimal security monitoring
+        $securityScript = $this->getBasicSecurityScript($sessionKey);
+        
+        // Inject script sebelum </body>
+        if (strpos($originalContent, '</body>') !== false) {
+            $originalContent = str_replace('</body>', $securityScript . '</body>', $originalContent);
+        } else {
+            $originalContent .= $securityScript;
+        }
+        
+        // Tulis kembali file yang sudah dimodifikasi
+        file_put_contents($indexFile, $originalContent);
+        
+        $this->logActivity('E-book content prepared at: ' . $indexFile);
+    }
+    
+    private function getBasicSecurityScript($sessionKey)
+    {
+        return '
+        <!-- Security Monitor -->
+        <div id="launcher-status" style="position: fixed; top: 10px; right: 10px; background: rgba(40, 167, 69, 0.9); color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 9999; font-family: Arial, sans-serif;">
+            📚 E-book Protected
+        </div>
+        
+        <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: #fff; padding: 5px 10px; border-radius: 10px; font-size: 10px; z-index: 9998; font-family: monospace; opacity: 0.7;">
+            Session: ' . substr($sessionKey, 0, 8) . '...<br>
+            Host: ' . gethostname() . '<br>
+            Time: ' . date('H:i:s') . '
+        </div>
+        
+        <script>
+            // Simplified security dengan passive monitoring
+            let isLauncherActive = true;
+            let statusElement = document.getElementById("launcher-status");
+            
+            // Function untuk check launcher (optional, tidak paksa)
+            function checkLauncherStatus() {
+                // Coba beberapa kemungkinan URL launcher
+                const urls = [
+                    "http://127.0.0.1:8000/launcher-check",
+                    "http://localhost:8000/launcher-check",
+                    "http://127.0.0.1:8080/launcher-check"
+                ];
+                
+                Promise.any(urls.map(url => 
+                    fetch(url, { 
+                        method: "GET",
+                        signal: AbortSignal.timeout(5000) // 5 second timeout
+                    })
+                ))
+                .then(response => {
+                    if (response.ok) {
+                        isLauncherActive = true;
+                        if (statusElement) {
+                            statusElement.textContent = "🔗 Launcher Connected";
+                            statusElement.style.background = "rgba(40, 167, 69, 0.9)";
+                        }
+                        console.log("✅ Launcher connection verified");
+                    }
+                })
+                .catch(error => {
+                    // Jangan langsung tutup, hanya update status
+                    isLauncherActive = false;
+                    if (statusElement) {
+                        statusElement.textContent = "⚠️ Launcher Check Failed";
+                        statusElement.style.background = "rgba(255, 193, 7, 0.9)";
+                    }
+                    console.log("⚠️ Launcher check failed (not critical):", error.message);
+                });
+            }
+            
+            // Warning ketika user coba close tab/window
+            window.addEventListener("beforeunload", function(e) {
+                if (isLauncherActive) {
+                    e.preventDefault();
+                    e.returnValue = "E-book masih aktif. Yakin ingin keluar?";
+                    return e.returnValue;
+                }
+            });
+            
+            // Minimal security - disable beberapa shortcuts saja
+            document.addEventListener("keydown", function(e) {
+                // Hanya disable F12 untuk mencegah inspect element casual
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Optional: Periodic check (tidak agresif)
+            setTimeout(() => {
+                checkLauncherStatus(); // Check setelah 10 detik
+                
+                // Set interval check yang tidak agresif (setiap 2 menit)
+                setInterval(checkLauncherStatus, 120000);
+            }, 10000);
+            
+            console.log("📚 E-book Session: ' . substr($sessionKey, 0, 16) . '");
+            console.log("🔒 Simplified protection loaded");
+            console.log("💡 Tip: Keep the launcher app open for best experience");
+        </script>';
+    }
+    
+    private function launchEbookInBrowser($tempDir)
+    {
+        // Path ke file index.html di temp directory
+        $indexFile = $tempDir . '/index.html';
+        
+        // Pastikan file ada
+        if (!file_exists($indexFile)) {
+            throw new \Exception('E-book file not found: ' . $indexFile);
+        }
+        
+        // Buka di browser default sesuai OS
+        if (PHP_OS_FAMILY === 'Windows') {
+            // Windows
+            exec("start \"\" \"$indexFile\"");
+        } elseif (PHP_OS_FAMILY === 'Darwin') {
+            // macOS
+            exec("open \"$indexFile\"");
+        } else {
+            // Linux
+            exec("xdg-open \"$indexFile\"");
+        }
+        
+        $this->logActivity('E-book launched in browser: ' . $indexFile);
+    }
+    
+    private function copyFlipbookDirectory($sourceDir, $destDir)
+    {
+        // Buat directory tujuan jika belum ada
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+        
+        // Scan semua file dan folder di source
+        $files = scandir($sourceDir);
+        
+        foreach ($files as $file) {
+            if ($file === '.' || $file === '..') continue;
+            
+            $sourcePath = $sourceDir . DIRECTORY_SEPARATOR . $file;
+            $destPath = $destDir . DIRECTORY_SEPARATOR . $file;
+            
+            if (is_dir($sourcePath)) {
+                // Recursively copy subdirectory (files/, mobile/, dll)
+                $this->copyFlipbookDirectory($sourcePath, $destPath);
+            } else {
+                // Copy file (index.html, shot.png, dll)
+                copy($sourcePath, $destPath);
+            }
+        }
+        
+        $this->logActivity('Flipbook copied from: ' . $sourceDir . ' to: ' . $destDir);
     }
     
     private function isActivationValid()
@@ -87,112 +259,11 @@ class EbookController extends Controller
         return $tempDir;
     }
     
-    private function decryptEbookContent($tempDir, $sessionKey)
-    {
-        // Baca file flipbook asli
-        $flipbookPath = storage_path('app/flipbook/index.html');
-        
-        if (!file_exists($flipbookPath)) {
-            throw new \Exception('File flipbook tidak ditemukan di: ' . $flipbookPath);
-        }
-        
-        // Baca content flipbook asli
-        $flipbookContent = file_get_contents($flipbookPath);
-        
-        // Tambah monitoring script
-        $monitoringScript = '
-        <script>
-        setInterval(() => {
-            fetch("http://127.0.0.1:8101/launcher-check")
-                .catch(() => {
-                    alert("⚠️ Launcher connection lost!");
-                    window.close();
-                });
-        }, 30000);
-        </script>';
-        
-        // Inject monitoring sebelum </body>
-        if (strpos($flipbookContent, '</body>') !== false) {
-            $flipbookContent = str_replace('</body>', $monitoringScript . '</body>', $flipbookContent);
-        } else {
-            $flipbookContent .= $monitoringScript;
-        }
-        
-        // Tulis ke temp directory
-        $indexFile = $tempDir . '/index.html';
-        file_put_contents($indexFile, $flipbookContent);
-        
-        $this->logActivity('FlipBook content loaded to: ' . $indexFile);
-    }
-    
-    private function createSampleAssets($tempDir)
-    {
-        // Create assets folder
-        $assetsDir = $tempDir . '/assets';
-        if (!is_dir($assetsDir)) {
-            mkdir($assetsDir, 0755, true);
-        }
-        
-        // Create sample CSS file
-        $css = '
-        .flipbook-enhanced {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            animation: gradientShift 5s ease infinite;
-        }
-        
-        @keyframes gradientShift {
-            0%, 100% { background: linear-gradient(45deg, #667eea, #764ba2); }
-            50% { background: linear-gradient(45deg, #764ba2, #667eea); }
-        }
-        ';
-        file_put_contents($assetsDir . '/style.css', $css);
-        
-        // Create sample JS file
-        $js = '
-        console.log("E-book assets loaded successfully");
-        console.log("Session protected with encryption");
-        ';
-        file_put_contents($assetsDir . '/script.js', $js);
-        
-        // Create sample config file
-        $config = json_encode([
-            'title' => 'Protected E-book',
-            'version' => '1.0.0',
-            'encryption' => 'AES-256',
-            'session_key' => 'protected',
-            'timestamp' => time()
-        ], JSON_PRETTY_PRINT);
-        file_put_contents($assetsDir . '/config.json', $config);
-    }
-    
-    private function launchEbookViewer($tempDir)
-    {
-        // Launch ebook dengan browser default (lebih reliable)
-        $indexFile = $tempDir . '/index.html';
-        
-        // Pastikan file ada
-        if (!file_exists($indexFile)) {
-            throw new \Exception('E-book file not found: ' . $indexFile);
-        }
-        
-        // Open di browser default
-        if (PHP_OS_FAMILY === 'Windows') {
-            exec("start \"\" \"$indexFile\"");
-        } elseif (PHP_OS_FAMILY === 'Darwin') {
-            exec("open \"$indexFile\"");
-        } else {
-            exec("xdg-open \"$indexFile\"");
-        }
-        
-        $this->logActivity('E-book viewer launched: ' . $indexFile);
-    }
-    
     private function startProcessMonitoring($tempDir)
     {
-        // Register cleanup ketika script terminate
-        // register_shutdown_function(function() use ($tempDir) {
-        //     $this->cleanupTempDirectory($tempDir);
-        // });
+        // Set timeout untuk auto-cleanup (2 jam)
+        $cleanupTime = time() + (2 * 60 * 60);
+        file_put_contents($tempDir . '/.cleanup_time', $cleanupTime);
         
         $this->logActivity('Process monitoring started for: ' . $tempDir);
     }
@@ -207,6 +278,8 @@ class EbookController extends Controller
     
     private function deleteDirectory($dir)
     {
+        if (!is_dir($dir)) return;
+        
         $files = array_diff(scandir($dir), array('.', '..'));
         foreach ($files as $file) {
             $path = $dir . DIRECTORY_SEPARATOR . $file;
@@ -232,6 +305,12 @@ class EbookController extends Controller
     {
         $timestamp = date('Y-m-d H:i:s');
         $logEntry = "[$timestamp] $message" . PHP_EOL;
+        
+        $logDir = storage_path('logs');
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0755, true);
+        }
+        
         file_put_contents(storage_path('logs/ebook-activity.log'), $logEntry, FILE_APPEND);
     }
 }
