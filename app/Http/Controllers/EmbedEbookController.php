@@ -215,7 +215,7 @@ class EmbedEbookController extends Controller
         ];
         
         // Extract title from HTML
-        if (preg_match('/<title[^>]*>(.*?)<\/title>/i', $content, $matches)) {
+        if (preg_match('/<title[^>]*>(.*?)<\/title>/i', $content, $matches)) {  
             $title = trim(strip_tags($matches[1]));
             if (!empty($title)) {
                 $metadata['title'] = $title;

@@ -228,8 +228,7 @@
         @endif
         
         <div class="launch-options">
-        
-            
+           
             <!-- Option 2: External Browser -->
             <div class="launch-section">
                 <h3>🌐 Buka di Browser External</h3>
@@ -241,7 +240,37 @@
                 <button class="btn-launch btn-external" onclick="launchExternalEbook()">
                     🌍 Buka E-book (Browser)
                 </button>
-                
+                <div class="features">
+                    <span class="feature-tag security">🔒 Monitoring Protection</span>
+                    <span class="feature-tag">🖥️ Browser Native</span>
+                    <span class="feature-tag">⚠️ Manual Close Required</span>
+                    <span class="feature-tag">🔧 Testing Mode</span>
+                </div>
+                <div class="loading" id="external-loading">
+                    <div class="spinner"></div>
+                    Membuka e-book di browser external...
+                </div>
+            </div>
+        </div>
+
+        <div class="launch-section">
+            <h3>📱 Buka di Embed Viewer</h3>
+            <p>
+                Buka e-book dalam viewer terintegrasi dengan proteksi keamanan.
+                Mode ini memberikan pengalaman viewing yang optimal dan aman.
+            </p>
+            <button class="btn-launch btn-external" onclick="launchEmbedEbook()">
+                🚀 Buka E-book (Embed)
+            </button>
+            <div class="features">
+                <span class="feature-tag security">🔒 Secure Viewer</span>
+                <span class="feature-tag">📱 Integrated Experience</span>
+                <span class="feature-tag performance">⚡ Fast Loading</span>
+                <span class="feature-tag">🛡️ Protected Content</span>
+            </div>
+            <div class="loading" id="embed-loading">
+                <div class="spinner"></div>
+                Membuka e-book di embed viewer...
             </div>
         </div>
         
@@ -270,45 +299,59 @@
     </div>
     
     <script>
-        // Launch Internal E-book (Option 1)
-        async function launchInternalEbook() {
-            const button = document.querySelector('.btn-internal');
-            const loading = document.getElementById('internal-loading');
+
+async function launchEmbedEbook() {
+    const button = document.querySelector('.btn-external');
+    const loading = document.getElementById('embed-loading');
+    
+    button.style.display = 'none';
+    loading.style.display = 'block';
+    
+    try {
+        const response = await fetch('/launch-embed', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            loading.innerHTML = '<div class="spinner"></div>Membuka viewer...';
             
-            // Show loading state
-            button.style.display = 'none';
-            loading.style.display = 'block';
+            // PERLEBAR WINDOW - ukuran lebih besar
+            const windowFeatures = [
+                'width=1400',           // Lebih lebar
+                'height=900',           // Lebih tinggi  
+                'left=100',             // Posisi dari kiri
+                'top=50',               // Posisi dari atas
+                'resizable=yes',        // Bisa di-resize
+                'scrollbars=yes',       // Ada scrollbar jika perlu
+                'status=no',            // Tidak ada status bar
+                'menubar=no',           // Tidak ada menu bar
+                'toolbar=no',           // Tidak ada toolbar
+                'location=no'           // Tidak ada address bar
+            ].join(',');
             
-            try {
-                const response = await fetch('/launch-internal-ebook', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    loading.innerHTML = '<div class="spinner"></div>E-book berhasil dibuka dalam aplikasi!';
-                    
-                    // Reset button after delay
-                    setTimeout(() => {
-                        button.style.display = 'block';
-                        loading.style.display = 'none';
-                    }, 3000);
-                } else {
-                    alert('Error: ' + result.message);
-                    button.style.display = 'block';
-                    loading.style.display = 'none';
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
+            window.open(result.viewer_url, 'ebook_viewer', windowFeatures);
+            
+            setTimeout(() => {
                 button.style.display = 'block';
                 loading.style.display = 'none';
-            }
+            }, 2000);
+        } else {
+            alert('Error: ' + result.message);
+            button.style.display = 'block';
+            loading.style.display = 'none';
         }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        button.style.display = 'block';
+        loading.style.display = 'none';
+    }
+}
         
         // Launch External E-book (Option 2)
         async function launchExternalEbook() {
@@ -365,17 +408,17 @@
                 setTimeout(() => {
                     alert(`💡 Tips Penggunaan E-book Launcher:
 
-🏠 Mode Internal (Rekomended):
-• Keamanan maksimal dengan auto-close protection
-• E-book tertutup otomatis jika launcher ditutup
-• Performance optimal dalam aplikasi
+                            🏠 Mode Internal (Rekomended):
+                            • Keamanan maksimal dengan auto-close protection
+                            • E-book tertutup otomatis jika launcher ditutup
+                            • Performance optimal dalam aplikasi
 
-🌐 Mode Browser External:
-• Cocok untuk testing atau troubleshooting
-• Tetap memiliki monitoring protection
-• Perlu ditutup manual jika launcher ditutup
+                            🌐 Mode Browser External:
+                            • Cocok untuk testing atau troubleshooting
+                            • Tetap memiliki monitoring protection
+                            • Perlu ditutup manual jika launcher ditutup
 
-Pilih mode sesuai kebutuhan Anda!`);
+                            Pilih mode sesuai kebutuhan Anda!`);
                     
                     localStorage.setItem('ebook_launcher_tips_seen', 'true');
                 }, 1000);

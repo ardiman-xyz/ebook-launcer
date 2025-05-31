@@ -26,13 +26,13 @@ class CheckActivation
         // Cek apakah device fingerprint masih sama
         $currentFingerprint = $this->getDeviceFingerprint();
         
-        if ($activationData['device_fingerprint'] !== $currentFingerprint) {
-            // Device berubah, hapus aktivasi lama
-            Storage::delete('activation.json');
+        // if ($activationData['device_fingerprint'] !== $currentFingerprint) {
+        //     // Device berubah, hapus aktivasi lama
+        //     Storage::delete('activation.json');
             
-            return redirect()->route('activation')
-                ->with('error', 'Device berubah atau tidak valid. Silakan aktivasi ulang.');
-        }
+        //     return redirect()->route('activation')
+        //         ->with('error', 'Device berubah atau tidak valid. Silakan aktivasi ulang.');
+        // }
 
         // Cek apakah aktivasi expired (optional - 30 hari)
         $activatedAt = strtotime($activationData['activated_at']);

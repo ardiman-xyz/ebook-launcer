@@ -214,6 +214,9 @@ class InternalEbookController extends Controller
             $content = $uiControls . $content;
         }
         
+        // Add closing wrapper for content
+        $content .= '</div>'; // Close .ebook-content wrapper
+        
         return $content;
     }
     
@@ -459,7 +462,8 @@ class InternalEbookController extends Controller
                 }
                 
                 // Convert relative path ke route asset internal
-                $secureUrl = url('/internal-ebook/assets/' . ltrim($path, './')) . 
+                $cleanPath = ltrim($path, './');
+                $secureUrl = url('/internal-ebook/assets/' . $cleanPath) . 
                             '?' . http_build_query(['temp_dir' => $tempDir, 'session_key' => $sessionKey]);
                 
                 return $attribute . '=' . $quote . $secureUrl . $quote;
@@ -468,19 +472,6 @@ class InternalEbookController extends Controller
         );
         
         return $content;
-    }
-    
-    private function getEbookTitle($tempDir)
-    {
-        // Coba extract title dari HTML atau gunakan default
-        $indexFile = $tempDir . '/index.html';
-        if (file_exists($indexFile)) {
-            $content = file_get_contents($indexFile);
-            if (preg_match('/<title[^>]*>(.*?)<\/title>/i', $content, $matches)) {
-                return strip_tags($matches[1]) ?: 'Protected E-book';
-            }
-        }
-        return 'Protected E-book';
     }
     
     private function prepareEbookContent($tempDir, $sessionKey)
